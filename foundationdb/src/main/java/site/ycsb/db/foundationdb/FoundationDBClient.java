@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static java.lang.System.getProperties;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -57,11 +58,14 @@ public class FoundationDBClient extends DB {
   private static final String TLS_KEY_FILE = "foundationdb.key";
   private static final String TLS_KEY_FILE_DEFAULT = "/etc/foundationdb/pki/client-server.key";
 
+  private static final byte[] TENANT_NAME = "adobe".getBytes();
+
   private static final String TLS_CA_FILE = "foundationdb.ca";
   private static final String TLS_CA_FILE_DEFAULT = "/etc/foundationdb/pki/ca.crt";
   private static Logger logger = LoggerFactory.getLogger(FoundationDBClient.class);
   private static FDB fdb;
   private static Database db;
+  private static Tenant tenant;
   private static String dbName;
   private static int batchSize;
   private static volatile boolean isFDBInitialized = false;
@@ -123,7 +127,7 @@ public class FoundationDBClient extends DB {
     String startRowKey = getRowKey(dbName, table, startkey);
     String endRowKey = getEndRowKey(table);
     logger.debug("scan key from {} to {} limit {} ", startkey, endRowKey, recordcount);
-    try (Transaction tr = db.createTransaction()) {
+    try (Transaction tr = db.openTenant(TENANT_NAME).createTransaction()) {
       tr.options().setReadYourWritesDisable();
       AsyncIterable<KeyValue> entryList = tr.getRange(Tuple.from(startRowKey).pack(), Tuple.from(endRowKey).pack(),
           recordcount > 0 ? recordcount : 0);
@@ -157,6 +161,7 @@ public class FoundationDBClient extends DB {
       performBatchOperation(null, true);
     }
     try {
+      tenant.close();
       db.close();
     } catch (FDBException e) {
       logger.error(MessageFormatter.format("Error in database operation: {}", "cleanup")
@@ -178,7 +183,7 @@ public class FoundationDBClient extends DB {
 
     // group list items by op
     try {
-      return db.run(tr -> {
+      return db.openTenant(TENANT_NAME).run(tr -> {
           List<CompletableFuture<Status>> statusList = new ArrayList<>();
           opList.forEach(op -> {
               switch (op.opName) {
@@ -361,6 +366,7 @@ public class FoundationDBClient extends DB {
       fdb.options().setTLSCaPath(tlsCaFile);
 
       db = fdb.open(clusterFile);
+      tenant = db.openTenant(TENANT_NAME);
       batchSize = Integer.parseInt(dbBatchSize);
 
       if (!Objects.equals(datacenterId, "")) {
