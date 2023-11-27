@@ -127,7 +127,7 @@ public class FoundationDBClient extends DB {
     String startRowKey = getRowKey(dbName, table, startkey);
     String endRowKey = getEndRowKey(table);
     logger.debug("scan key from {} to {} limit {} ", startkey, endRowKey, recordcount);
-    try (Transaction tr = db.openTenant(TENANT_NAME).createTransaction()) {
+    try (Transaction tr = tenant.createTransaction()) {
       tr.options().setReadYourWritesDisable();
       AsyncIterable<KeyValue> entryList = tr.getRange(Tuple.from(startRowKey).pack(), Tuple.from(endRowKey).pack(),
           recordcount > 0 ? recordcount : 0);
@@ -183,7 +183,7 @@ public class FoundationDBClient extends DB {
 
     // group list items by op
     try {
-      return db.openTenant(TENANT_NAME).run(tr -> {
+      return tenant.run(tr -> {
           List<CompletableFuture<Status>> statusList = new ArrayList<>();
           opList.forEach(op -> {
               switch (op.opName) {
@@ -219,6 +219,7 @@ public class FoundationDBClient extends DB {
                     opListSerialized).getMessage(), e);
     } finally {
       opList.clear();
+      //tenant.close();
     }
 
     return Status.ERROR;
