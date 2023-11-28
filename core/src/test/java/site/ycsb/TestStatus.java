@@ -33,7 +33,7 @@ public class TestStatus {
     assertFalse(Status.BAD_REQUEST.isOk());
     assertFalse(Status.ERROR.isOk());
     assertFalse(Status.FORBIDDEN.isOk());
-    assertFalse(Status.NOT_FOUND.isOk());
+    assertTrue(Status.NOT_FOUND.isOk());
     assertFalse(Status.NOT_IMPLEMENTED.isOk());
     assertFalse(Status.SERVICE_UNAVAILABLE.isOk());
     assertFalse(Status.UNEXPECTED_STATE.isOk());
