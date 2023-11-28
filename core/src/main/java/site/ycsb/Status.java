@@ -90,7 +90,7 @@ public class Status {
    * @return true if the operation is successful, false otherwise
    */
   public boolean isOk() {
-    return this == OK || this == BATCHED_OK;
+    return this == OK || this == BATCHED_OK || this == NOT_FOUND;
   }
 
   public static final Status OK = new Status("OK", "The operation completed successfully.");

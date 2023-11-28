@@ -205,8 +205,6 @@ public class FoundationDBClient extends DB {
             });
           List<Status> statusList2 = sequence(statusList).join();
           boolean someFailure = statusList2.stream().anyMatch(s -> !s.isOk());
-          statusList2.forEach(s -> System.err.print(s.getName() + " "));
-          System.err.println();
           return someFailure ? Status.ERROR : Status.OK;
         });
     } catch (FDBException e) {
@@ -292,7 +290,6 @@ public class FoundationDBClient extends DB {
   }
 
   private static Status convTupleToMap(Tuple tuple, Set<String> fields, Map<String, ByteIterator> result) {
-    System.err.println("READ SOMETHING!");
     for (int i = 0; i < tuple.size(); i++) {
       Tuple v = tuple.getNestedTuple(i);
       String field = v.getString(0);
